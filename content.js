@@ -12,7 +12,7 @@
     questionText: '.question-title, .richtext-container.question-title, .title-text, .stem',
     options: '.answer-area label, .choice-list label',
     optionClick: 'input[type="radio"], input[type="checkbox"]',
-    blankInput: 'input[type="text"]',
+    blankInput: 'input.blank-item-input, input[type="text"]',
     essayTextarea: 'textarea',
     submitBtn: 'button.submit-button, .submit-button, .el-button--primary, .ul-button--primary'
   };
@@ -341,13 +341,28 @@
       case 'blank': {
         const bs = c.querySelectorAll(sel.blankInput);
         const as = answer.split('|||').map(a => a.trim());
-        bs.forEach((inp, i) => { inp.value = as[i] || as[0] || answer; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); });
+        for (let i = 0; i < bs.length; i++) {
+          const inp = bs[i];
+          const val = as[i] || as[0] || answer;
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+          nativeInputValueSetter.call(inp, val);
+          inp.dispatchEvent(new Event('focus', { bubbles: true }));
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+          inp.dispatchEvent(new Event('change', { bubbles: true }));
+          inp.dispatchEvent(new Event('blur', { bubbles: true }));
+          inp.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+          inp.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'a' }));
+          await sleep(100);
+        }
         return bs.length > 0;
       }
       case 'essay': {
         const ta = c.querySelector(sel.essayTextarea);
         if (!ta) return false;
-        ta.value = answer; ta.dispatchEvent(new Event('input', { bubbles: true })); ta.dispatchEvent(new Event('change', { bubbles: true }));
+        const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+        nativeTextAreaValueSetter.call(ta, answer);
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        ta.dispatchEvent(new Event('change', { bubbles: true }));
         return true;
       }
       default: return m ? clickOpt(c, m[1].toUpperCase().charCodeAt(0) - 65) : false;
@@ -369,12 +384,24 @@
     const fullText = c.innerText || '';
 
     // 方法1：从 .answer-area .correct 提取（优学院实际结构）
-    const correctEl = c.querySelector('.answer-area .correct span:last-child')
-                   || c.querySelector('.correct-show-answer .correct span:last-child')
-                   || c.querySelector('.correct-show-answer .correct')
-                   || c.querySelector('[class*="correct-answer"]');
-    if (correctEl) {
-      const text = correctEl.innerText.replace(/正确答案[：:]?\s*/, '').trim();
+    const correctContainer = c.querySelector('.answer-area .correct')
+                          || c.querySelector('.correct-show-answer .correct')
+                          || c.querySelector('[class*="correct-answer"]');
+    if (correctContainer) {
+      // 填空题可能有多个 div，每个是一个空的答案
+      const divs = correctContainer.querySelectorAll('div');
+      if (divs.length > 1) {
+        // 多个空，用 ||| 连接
+        const answers = [];
+        divs.forEach(div => {
+          let text = div.innerText.replace(/正确答案[：:]?\s*/, '').replace(/^\[\d+\]\s*/, '').trim();
+          if (text) answers.push(text);
+        });
+        if (answers.length > 0) return answers.join('|||');
+      }
+      // 单个答案
+      const correctEl = correctContainer.querySelector('span:last-child') || correctContainer;
+      let text = correctEl.innerText.replace(/正确答案[：:]?\s*/, '').replace(/^\[\d+\]\s*/, '').trim();
       if (text && !/^我的/.test(text) && !/^回答/.test(text)) return text;
     }
 
@@ -500,6 +527,19 @@
         // 校验记忆值是否有效
         if (answer && /[✓✗✘×√]/.test(answer)) {
           delete answerMemory[key];
+          saveMemory();
+          answer = null;
+        }
+        // 填空题记忆格式校验：不能包含 [1] [2] 前缀或被截断
+        if (answer && q.type === 'blank' && /\[\d+/.test(answer)) {
+          delete answerMemory[key];
+          saveMemory();
+          answer = null;
+        }
+        // 填空题答案必须包含 ||| 分隔符（多个空）
+        if (answer && q.type === 'blank' && q.text.includes('[1]') && q.text.includes('[2]') && !answer.includes('|||')) {
+          delete answerMemory[key];
+          saveMemory();
           answer = null;
         }
         if (answer) {
@@ -542,13 +582,15 @@
           humanClick(btn);
           addLog('提交', 'ok');
 
-          // 等待反馈出现
-          await interruptibleSleep(1000);
-          const allStatus = document.querySelectorAll('.status');
+          // 等待反馈出现（等久一点确保渲染完成）
+          await interruptibleSleep(1500);
+          // 从页面全局找最新的反馈
+          const allStatus = document.querySelectorAll('.answer-status .status, .status');
           const allAreas = document.querySelectorAll('.answer-area');
           const statusEl = allStatus[allStatus.length - 1];
           const curAnswerArea = allAreas[allAreas.length - 1];
           const feedbackText = ((statusEl?.innerText || '') + ' ' + (curAnswerArea?.innerText || '')).trim();
+          addLog(`反馈调试: ${feedbackText.substring(0, 50)}`, 'info');
 
           // 日志里显示反馈
           if (feedbackText) {
