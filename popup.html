@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-icon">🎓</div>
+    <div class="header-text">
+      <h1>ULearning Helper</h1>
+      <p>AI驱动 · 自动识别 · 一键完成</p>
+    </div>
+  </div>
+
+  <!-- API配置 -->
+  <div class="section">
+    <div class="section-title">API 配置</div>
+    <div class="input-group">
+      <label>API 地址</label>
+      <input type="text" id="apiUrl" placeholder="https://api.openai.com/v1/chat/completions">
+    </div>
+    <div class="input-group">
+      <label>API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-...">
+    </div>
+    <div class="input-group">
+      <label>模型</label>
+      <input type="text" id="model" placeholder="gpt-4o-mini">
+    </div>
+    <button class="btn btn-primary" id="saveBtn" style="margin-top:8px">💾 保存配置</button>
+    <button class="btn btn-secondary" id="testBtn" style="margin-top:6px">🧪 测试API连接</button>
+    <div class="status" id="configStatus"></div>
+  </div>
+
+  <!-- 答题控制 -->
+  <div class="section">
+    <div class="section-title">答题控制</div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="startBtn">▶ 开始答题</button>
+      <button class="btn btn-danger" id="stopBtn" disabled>⏹ 停止</button>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressBar"></div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="totalQ">0</div>
+        <div class="stat-label">总题数</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="doneQ">0</div>
+        <div class="stat-label">已完成</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="failQ">0</div>
+        <div class="stat-label">失败</div>
+      </div>
+    </div>
+    <div class="log-container" id="logContainer"></div>
+  </div>
+
+  <!-- 高级设置 -->
+  <div class="section">
+    <div class="toggle-header" id="advancedToggle">
+      <div class="section-title" style="margin-bottom:0">⚙️ 高级设置</div>
+    </div>
+    <div class="toggle-content" id="advancedContent">
+      <div class="warning">
+        ⚠️ 仅在默认选择器无法匹配题目时修改。修改前请先用浏览器开发者工具检查页面元素。
+      </div>
+      <div class="input-group">
+        <label>题目容器</label>
+        <input type="text" id="selQuestion" placeholder=".question-item, .exam-question ...">
+      </div>
+      <div class="input-group">
+        <label>题目文本</label>
+        <input type="text" id="selQText" placeholder=".question-text, .topic-text ...">
+      </div>
+      <div class="input-group">
+        <label>选项列表</label>
+        <input type="text" id="selOptions" placeholder=".option-item, .answer-item ...">
+      </div>
+      <div class="input-group">
+        <label>填空题输入框</label>
+        <input type="text" id="selBlank" placeholder="input[type='text'], .blank-input ...">
+      </div>
+      <div class="input-group">
+        <label>简答题文本域</label>
+        <input type="text" id="selEssay" placeholder="textarea, .essay-answer ...">
+      </div>
+      <div class="input-group">
+        <label>提交按钮</label>
+        <input type="text" id="selSubmit" placeholder=".submit-btn, .next-btn ...">
+      </div>
+      <button class="btn btn-secondary" id="saveSelectorsBtn" style="margin-top:8px">保存选择器</button>
+      <button class="btn btn-secondary" id="resetSelectorsBtn" style="margin-top:6px">恢复默认</button>
+      <button class="btn btn-secondary" id="inspectBtn" style="margin-top:6px">🔍 检测页面题目元素</button>
+      <div class="status" id="selectorStatus"></div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

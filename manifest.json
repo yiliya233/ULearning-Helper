@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "ULearning Helper",
+  "version": "2.0.0",
+  "description": "ULearning 自动答题助手 — AI驱动，自动识别题目并填写答案",
+  "permissions": ["storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.ulearning.cn/*"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["settings.html", "settings.js"],
+      "matches": ["*://*.ulearning.cn/*"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
